@@ -70,25 +70,19 @@ export default function RegisterPage() {
       if (authError) throw authError
 
       if (authData.user) {
-        // Hash password for our custom users table
-        const passwordHash = await hashPassword(password)
-
-        // Store user data in our custom users table
-        const { error: dbError } = await supabase.from("users").insert({
-          id: authData.user.id,
-          cu_id: cuId,
-          email,
-          password_hash: passwordHash,
-        })
-
-        if (dbError) throw dbError
-
-        // Check if email confirmation is required
+        // If a session exists (email confirmation not required), create user row now.
+        // Otherwise, skip insert for now; we'll create the row after first login.
         if (authData.session) {
-          // User is automatically logged in
+          const passwordHash = await hashPassword(password)
+          const { error: dbError } = await supabase.from("users").insert({
+            id: authData.user.id,
+            cu_id: cuId,
+            email,
+            password_hash: passwordHash,
+          })
+          if (dbError) throw dbError
           router.push("/dashboard")
         } else {
-          // Email confirmation required
           router.push("/register-success")
         }
       }
